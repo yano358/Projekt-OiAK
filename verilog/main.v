@@ -105,7 +105,7 @@ module SumNode(
 	output S
 );
 
-	assign S = (carry == 1'b1) ? H ^ G : Hprim ^ Gprim;
+	assign S = (carry == 1'b0) ? H ^ G : Hprim ^ Gprim;
 
 endmodule
 
@@ -119,13 +119,14 @@ module ParallelPrefixModularAdder #(parameter N=8) (
 	wire [N:0] Bprim;
 	wire [N-1:-1] G[levels:0], P[levels:0], Gprim[levels:0], Pprim[levels:0];
 	wire [N-1:0] H, Hprim; 
-	assign O = Pprim[0][N-1:0];
+	//reg [N-1:0] debug;
+	//assign O = Hprim; 
 
 	genvar i;
 	genvar j;
 	genvar counter;
 	generate
-		for(i = 0; i < levels; i = i + 1) begin
+		for(i = 0; i <= levels; i = i + 1) begin
 			assign G[i][-1] = 0;
 			assign P[i][-1] = 0;
 			assign Gprim[i][-1] = 0;
@@ -148,19 +149,21 @@ module ParallelPrefixModularAdder #(parameter N=8) (
 				.Bprim_out(Bprim[i+1])
 			);
 		end
-
+		
 		for(j = 1; j <= levels; j = j + 1) begin
 			for(i = 0; i < N; i = i + 1) begin
-				if(i[j] == 1'b1) begin
+				if(i[j-1] == 1'b1) begin
+	//				assign debug[i] = 1;
+					localparam PREVIOUS = i - (i % (2**(j-1)) + 1);
 					ParallelPrefixNodeExtended parallel_prefix_node(
 					 .G(G[j-1][i]),
 					 .P(P[j-1][i]),
 					 .Gprim(Gprim[j-1][i]),
 					 .Pprim(Pprim[j-1][i]),
-					 .Gprev(G[j-1][i-1]),
-					 .Pprev(P[j-1][i-1]),
-					 .Gprevprim(Gprim[j-1][i-1]),
-					 .Pprevprim(Pprim[j-1][i-1]),
+					 .Gprev(G[j-1][PREVIOUS]),
+					 .Pprev(P[j-1][PREVIOUS]),
+					 .Gprevprim(Gprim[j-1][PREVIOUS]),
+					 .Pprevprim(Pprim[j-1][PREVIOUS]),
 					 .Gout(G[j][i]),
 					 .Pout(P[j][i]),
 					 .Goutprim(Gprim[j][i]),
@@ -168,6 +171,7 @@ module ParallelPrefixModularAdder #(parameter N=8) (
 					);
 				end
 				else begin
+	//				assign debug[i] = 0;
 					assign G[j][i] = G[j-1][i];
 					assign P[j][i] = P[j-1][i];
 					assign Gprim[j][i] = Gprim[j-1][i];
@@ -176,8 +180,17 @@ module ParallelPrefixModularAdder #(parameter N=8) (
 			end
 		end
 
+		for (i = 0; i < N; i = i+1) begin
+			SumNode sum_node(
+				.H(H[i]),
+				.Hprim(Hprim[i]),
+				.G(G[levels][i-1]),
+				.Gprim(Gprim[levels][i-1]),
+				.carry(G[levels][N-1]),
+				.S(O[i])
+			);
+		end
 	endgenerate
-
 endmodule
 
 module hello;
