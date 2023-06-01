@@ -119,6 +119,8 @@ module ParallelPrefixModularAdder #(parameter N=8) (
 	wire [N:0] Bprim;
 	wire [N-1:-1] G[levels:0], P[levels:0], Gprim[levels:0], Pprim[levels:0];
 	wire [N-1:0] H, Hprim; 
+	//reg [N-1:0] debug;
+	//assign O = Hprim; 
 
 	genvar i;
 	genvar j;
@@ -151,6 +153,7 @@ module ParallelPrefixModularAdder #(parameter N=8) (
 		for(j = 1; j <= levels; j = j + 1) begin
 			for(i = 0; i < N; i = i + 1) begin
 				if(i[j-1] == 1'b1) begin
+	//				assign debug[i] = 1;
 					localparam PREVIOUS = i - (i % (2**(j-1)) + 1);
 					ParallelPrefixNodeExtended parallel_prefix_node(
 					 .G(G[j-1][i]),
@@ -168,6 +171,7 @@ module ParallelPrefixModularAdder #(parameter N=8) (
 					);
 				end
 				else begin
+	//				assign debug[i] = 0;
 					assign G[j][i] = G[j-1][i];
 					assign P[j][i] = P[j-1][i];
 					assign Gprim[j][i] = Gprim[j-1][i];
@@ -182,7 +186,7 @@ module ParallelPrefixModularAdder #(parameter N=8) (
 				.Hprim(Hprim[i]),
 				.G(G[levels][i-1]),
 				.Gprim(Gprim[levels][i-1]),
-				.carry(G[levels][N-1] | Gprim[levels][N-1]),
+				.carry(G[levels][N-1]),
 				.S(O[i])
 			);
 		end
@@ -197,7 +201,6 @@ module hello;
 	reg [N_BIT - 1:0] k;
 	reg [N_BIT - 1:0] expected;
 	wire [N_BIT - 1:0] sum;
-	reg done;
 
 	ParallelPrefixModularAdder #(N_BIT) adder_inst (
 		.A(a),
@@ -210,20 +213,61 @@ module hello;
 		a = 53;
 		b = 60;
 		k = 5;
-		done = 0;
 		for(a = 0; a < 2**N_BIT-k; a=a+1) begin
 			for(b = 0; b < 2**N_BIT-k; b=b+1) begin
-				if(done == 0) begin
-					expected = (a + b) % (2**N_BIT-k);
-					#10;
-					$display("Expected: %d, Actual: %d, A: %d, B: %d", expected, sum, a, b);
-					if(expected != sum) begin
-						done = 1;
-					end
-				end
+				expected = (a + b) % (2**N_BIT-k);
+				#10;
+				$display("Expected: %d, Actual: %d", exp, sum);
 			end
 		end
 		#150;
+
+		$display("Hello world! %b", sum);
 	end
 endmodule
 
+
+
+//module hello;
+//	reg a;
+//	reg b;
+//	reg k;
+//	reg bpi;
+//
+//	wire G, H, P, Gprim, Hprim, Pprim, Bprim_out;
+//
+//	PreProcessingNodeExtended p (
+//		.A(a),
+//		.B(b),
+//		.K(k),
+//		.Bprim_in(bpi),
+//		.G(G),
+//		.H(H),
+//		.P(P),
+//		.Gprim(Gprim),
+//		.Hprim(Hprim),
+//		.Pprim(Pprim),
+//		.Bprim_out(Bprim_out)
+//	);
+//
+//	integer counter;
+//	integer n;
+//
+//	initial begin
+//		counter = 0;
+//		n = 4;
+//
+//		repeat(2**n) begin
+//			a = counter[0];
+//			b = counter[1];
+//			k = counter[2];
+//			bpi = counter[3];
+//			#50;
+//
+//			$display("A: %d, B: %d, K: %d, Bprim_in: %d", a, b, k, bpi);
+//			$display("G: %d, H: %d, P: %d, Gprim: %d, Hprim: %d, Pprim: %d, Bprim_out: %d", G, H, P, Gprim, Hprim, Pprim, Bprim_out);
+//			$display("");
+//			counter = counter + 1;
+//		end
+//	end
+//endmodule
