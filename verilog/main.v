@@ -211,14 +211,16 @@ module hello;
 		b = 60;
 		k = 5;
 		done = 0;
-		for(a = 0; a < 2**N_BIT-k; a=a+1) begin
-			for(b = 0; b < 2**N_BIT-k; b=b+1) begin
-				if(done == 0) begin
-					expected = (a + b) % (2**N_BIT-k);
-					#10;
-					$display("Expected: %d, Actual: %d, A: %d, B: %d", expected, sum, a, b);
-					if(expected != sum) begin
-						done = 1;
+		for(k = 3; k < 2**(N_BIT-1); k = k + 1) begin
+			for(a = 0; a < 2**N_BIT-k; a=a+1) begin
+				for(b = 0; b < 2**N_BIT-k; b=b+1) begin
+					if(done == 0) begin
+						expected = (a + b) % (2**N_BIT-k);
+						#10;
+						$display("Expected: %d, Actual: %d, A: %d, B: %d, K: %d", expected, sum, a, b, k);
+						if(expected != sum) begin
+							done = 1;
+						end
 					end
 				end
 			end
